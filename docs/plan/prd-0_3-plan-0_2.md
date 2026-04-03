@@ -20,18 +20,17 @@
 标记改动文件：`src/.../input-dispatcher.*`、`src/features/parking-contract/input-guard.ts`、`src/.../session-controller.*`、`src/.../scene-renderer.*`、`tests/parking-contract/boundary-path.spec.*`。
 
 ### 切片3
-在【`RUNNING/SETTLING/DONE`】下，当【开始、结束、重试、返回场景选择】发生时，系统通过【`session-controller -> session-end-policy -> result-panel`】在【HUD + 控制区 + 结果面板】呈现【状态机驱动的完整会话交互（可开始、可结束、可重开）】。  
+1. 在【`RUNNING/SETTLING/DONE`】下，当【开始、结束、重试、返回场景选择】发生时，系统通过【`session-controller -> session-end-policy -> result-panel`】在【HUD + 控制区 + 结果面板】呈现【状态机驱动的完整会话交互（可开始、可结束、可重开）】。  
 标记改动文件：`src/.../session-controller.*`、`src/features/parking-contract/session-end-policy.ts`、`src/.../result-panel.*`、`tests/parking-contract/smoke-checklist.md`。
 
-### 切片4
-在【`RUNNING -> SETTLING`】下，当【用户点击结束】发生时，系统通过【几何评估链路 -> `result-classifier` -> `result-panel`】在【结果面板】呈现【单场景真实结算（成功/失败）与速度阈值差异（0.05 vs 0.051）】。  
+2. 在【`RUNNING -> SETTLING`】下，当【用户点击结束】发生时，系统通过【几何评估链路 -> `result-classifier` -> `result-panel`】在【结果面板】呈现【单场景真实结算（成功/失败）与速度阈值差异（0.05 vs 0.051）】。  
 标记改动文件：`src/features/parking-contract/result-classifier.ts`、`src/.../session-controller.*`、`src/.../result-panel.*`、`tests/parking-contract/normal-path.spec.*`、`tests/parking-contract/boundary-path.spec.*`。
 
-### 切片5
+### 切片4
 在【`RUNNING`】下，当【碰撞/压线/超时/输入越界】发生时，系统通过【`risk-recorder + session-end-policy + input-guard -> session-controller -> HUD/result-panel`】在【HUD 风险区 + 结果面板】呈现【风险即时提示且锁存、超时自动结束、输入钳制不中断】。  
 标记改动文件：`src/features/parking-contract/risk-recorder.ts`、`src/features/parking-contract/session-end-policy.ts`、`src/features/parking-contract/input-guard.ts`、`tests/parking-contract/failure-path.spec.*`、`tests/parking-contract/boundary-path.spec.*`。
 
-### 切片6
+### 切片5
 在【`DONE/READY`】下，当【用户切换四个场景循环练习】发生时，系统通过【`scene-catalog -> scene-loader -> scene-renderer -> contract pipeline`】在【练习页画布 + 结果面板】呈现【四场景均具备可区分渲染（正常/窄路、倒库/侧方）并完整可交互结算】。  
 标记改动文件：`src/features/parking-contract/contract-constants.ts`、`src/.../scene-renderer.*`、`tests/parking-contract/normal-path.spec.*`、`tests/parking-contract/boundary-path.spec.*`、`tests/parking-contract/failure-path.spec.*`、`tests/parking-contract/smoke-checklist.md`。
 

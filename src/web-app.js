@@ -1,30 +1,29 @@
-const SCENARIOS = ["normal-reverse-parking"];
-const SCENE_LAYER_ORDER = [
-  "background",
-  "road",
-  "laneMarkings",
-  "parkingSlots",
-  "decorations",
-  "staticCars",
-  "egoCar",
-  "HUDOverlay",
-];
+﻿import { createPlayPageModel } from "./.demo-gen/play-page.js";
+import { SCENE_RENDER_TOKENS } from "./.demo-gen/features/parking-contract/contract-constants.js";
 
-const TOKENS = {
-  background: "#edf1f5",
-  road: "#1b1b1b",
-  laneMarkings: "#ffffff",
-  parkingSlots: "#d9d9d9",
-  greenbelt: "#2f8f46",
-  staticCars: "#8ea0ad",
-  egoBody: "#c53030",
-  egoHead: "#742a2a",
-  egoWheel: "#1a202c",
+const ROAD_RECTS = {
+  "main-road-rect": { x: 80, y: 50, w: 560, h: 320 },
 };
 
-const PLACEHOLDER_RESULT = {
-  success: "SUCCESS_PLACEHOLDER",
-  failure: "FAILURE_PLACEHOLDER",
+const LANE_LINES = {
+  "lane-edge-left": { x1: 100, y1: 100, x2: 620, y2: 100, dashed: false },
+  "lane-edge-right": { x1: 100, y1: 300, x2: 620, y2: 300, dashed: false },
+  "lane-center-dash": { x1: 360, y1: 80, x2: 360, y2: 340, dashed: true },
+};
+
+const PARKING_SLOTS = {
+  "slot-a-outline": { x: 130, y: 210, w: 120, h: 80 },
+  "slot-b-outline": { x: 280, y: 210, w: 120, h: 80 },
+  "slot-c-outline": { x: 430, y: 210, w: 120, h: 80 },
+};
+
+const GREENBELT_RECTS = {
+  "greenbelt-top-strip": { x: 80, y: 18, w: 560, h: 24 },
+};
+
+const STATIC_CARS = {
+  "ref-car-left": { x: 150, y: 228, w: 80, h: 34 },
+  "ref-car-right": { x: 450, y: 228, w: 80, h: 34 },
 };
 
 function clamp(value, min, max) {
@@ -33,162 +32,58 @@ function clamp(value, min, max) {
   return value;
 }
 
-function isScenarioId(value) {
-  return SCENARIOS.includes(value);
+function getLayer(state, layerId) {
+  return state.renderedScene?.layers.find((layer) => layer.layerId === layerId) ?? null;
 }
 
-function isDirectionInput(value) {
-  return value === "left" || value === "right" || value === "straight";
-}
-
-function normalizeControlInput(input) {
-  if (!isDirectionInput(input.direction)) {
-    return null;
-  }
-  return {
-    direction: input.direction,
-    throttle: clamp(Number(input.throttle), -1, 1),
-  };
-}
-
-function loadSceneRenderSpec(scenarioId) {
-  if (!isScenarioId(scenarioId)) {
-    return null;
-  }
-  return {
-    scenarioId,
-    geometry: {
-      road: [{ x: 80, y: 50, w: 560, h: 320 }],
-      laneMarkings: [
-        { x1: 100, y1: 100, x2: 620, y2: 100 },
-        { x1: 100, y1: 300, x2: 620, y2: 300 },
-        { x1: 360, y1: 80, x2: 360, y2: 340, dashed: true },
-      ],
-      parkingSlots: [
-        { x: 130, y: 210, w: 120, h: 80 },
-        { x: 280, y: 210, w: 120, h: 80 },
-        { x: 430, y: 210, w: 120, h: 80 },
-      ],
-      greenbelt: [{ x: 80, y: 18, w: 560, h: 24 }],
-      staticCars: [
-        { x: 150, y: 228, w: 80, h: 34 },
-        { x: 450, y: 228, w: 80, h: 34 },
-      ],
-    },
-  };
-}
-
-function renderScene(spec) {
-  const layers = SCENE_LAYER_ORDER.map((layerId) => {
-    switch (layerId) {
-      case "background":
-        return { layerId, visible: true };
-      case "road":
-        return { layerId, visible: spec.geometry.road.length > 0 };
-      case "laneMarkings":
-        return { layerId, visible: spec.geometry.laneMarkings.length > 0 };
-      case "parkingSlots":
-        return { layerId, visible: spec.geometry.parkingSlots.length > 0 };
-      case "decorations":
-        return { layerId, visible: spec.geometry.greenbelt.length > 0 };
-      case "staticCars":
-        return { layerId, visible: spec.geometry.staticCars.length > 0 };
-      default:
-        return { layerId, visible: false };
+function drawRects(ctx, elements, dictionary, mode) {
+  for (const id of elements) {
+    const rect = dictionary[id];
+    if (!rect) continue;
+    if (mode === "fill") {
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    } else {
+      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
     }
-  });
-  return { scenarioId: spec.scenarioId, layers, geometry: spec.geometry };
-}
-
-class SessionController {
-  constructor() {
-    this.phase = "IDLE";
-    this.selectedScenario = null;
-    this.renderedScene = null;
-    this.renderReady = false;
-    this.lastControl = null;
-    this.resultText = null;
-    this.ego = { x: 360, y: 340, angle: -Math.PI / 2 };
-  }
-
-  selectScenario(scenario) {
-    if (!isScenarioId(scenario)) return;
-    this.selectedScenario = scenario;
-    this.phase = "READY";
-    this.resultText = null;
-    this.lastControl = null;
-    this.renderedScene = null;
-    this.renderReady = false;
-    this.resetEgo();
-  }
-
-  setRenderedScene(scene) {
-    if (this.selectedScenario !== scene.scenarioId) return;
-    this.renderedScene = scene;
-    this.renderReady = true;
-  }
-
-  resetEgo() {
-    this.ego = { x: 360, y: 340, angle: -Math.PI / 2 };
-  }
-
-  applyControl(input) {
-    if (this.phase !== "READY" && this.phase !== "RUNNING") return;
-    const normalized = normalizeControlInput(input);
-    if (!normalized) return;
-
-    if (this.phase === "READY") this.phase = "RUNNING";
-    this.lastControl = normalized;
-
-    const steer = normalized.direction === "left" ? -0.08 : normalized.direction === "right" ? 0.08 : 0;
-    this.ego.angle += steer;
-    const speed = normalized.throttle * 6;
-    this.ego.x += Math.cos(this.ego.angle) * speed;
-    this.ego.y += Math.sin(this.ego.angle) * speed;
-    this.ego.x = clamp(this.ego.x, 100, 620);
-    this.ego.y = clamp(this.ego.y, 70, 360);
-  }
-
-  finishSession(options) {
-    if (this.phase !== "READY" && this.phase !== "RUNNING") return;
-    this.phase = "SETTLING";
-    this.resultText = options?.successHint ? PLACEHOLDER_RESULT.success : PLACEHOLDER_RESULT.failure;
-    this.phase = "DONE";
-  }
-
-  getViewState() {
-    return {
-      phase: this.phase,
-      selectedScenario: this.selectedScenario,
-      renderedScene: this.renderedScene,
-      renderReady: this.renderReady,
-      lastControl: this.lastControl,
-      resultText: this.resultText,
-      ego: { ...this.ego },
-    };
   }
 }
 
-function drawCar(ctx, ego) {
+function drawLaneLines(ctx, elements) {
+  for (const id of elements) {
+    const line = LANE_LINES[id];
+    if (!line) continue;
+    ctx.setLineDash(line.dashed ? [8, 6] : []);
+    ctx.beginPath();
+    ctx.moveTo(line.x1, line.y1);
+    ctx.lineTo(line.x2, line.y2);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function drawEgoCar(ctx, ego) {
   ctx.save();
   ctx.translate(ego.x, ego.y);
   ctx.rotate(ego.angle);
-  ctx.fillStyle = TOKENS.egoBody;
+
+  ctx.fillStyle = SCENE_RENDER_TOKENS.egoBody;
   ctx.fillRect(-18, -10, 36, 20);
-  ctx.fillStyle = TOKENS.egoHead;
+
+  ctx.fillStyle = SCENE_RENDER_TOKENS.egoHead;
   ctx.fillRect(4, -8, 12, 16);
-  ctx.fillStyle = TOKENS.egoWheel;
+
+  ctx.fillStyle = SCENE_RENDER_TOKENS.egoWheel;
   ctx.fillRect(-16, -12, 7, 4);
   ctx.fillRect(9, -12, 7, 4);
   ctx.fillRect(-16, 8, 7, 4);
   ctx.fillRect(9, 8, 7, 4);
+
   ctx.restore();
 }
 
 function drawScene(ctx, state) {
   ctx.clearRect(0, 0, 720, 420);
-
-  ctx.fillStyle = TOKENS.background;
+  ctx.fillStyle = SCENE_RENDER_TOKENS.background;
   ctx.fillRect(0, 0, 720, 420);
 
   if (!state.renderReady || !state.renderedScene) {
@@ -198,37 +93,49 @@ function drawScene(ctx, state) {
     return;
   }
 
-  const g = state.renderedScene.geometry;
+  const roadLayer = getLayer(state, "road");
+  const laneLayer = getLayer(state, "laneMarkings");
+  const slotLayer = getLayer(state, "parkingSlots");
+  const decoLayer = getLayer(state, "decorations");
+  const staticLayer = getLayer(state, "staticCars");
+  const egoLayer = getLayer(state, "egoCar");
 
-  ctx.fillStyle = TOKENS.road;
-  for (const item of g.road) ctx.fillRect(item.x, item.y, item.w, item.h);
-
-  ctx.strokeStyle = TOKENS.laneMarkings;
-  ctx.lineWidth = 2;
-  for (const item of g.laneMarkings) {
-    ctx.setLineDash(item.dashed ? [8, 6] : []);
-    ctx.beginPath();
-    ctx.moveTo(item.x1, item.y1);
-    ctx.lineTo(item.x2, item.y2);
-    ctx.stroke();
+  if (roadLayer?.visible) {
+    ctx.fillStyle = SCENE_RENDER_TOKENS.road;
+    drawRects(ctx, roadLayer.elements, ROAD_RECTS, "fill");
   }
-  ctx.setLineDash([]);
 
-  ctx.strokeStyle = TOKENS.parkingSlots;
-  for (const item of g.parkingSlots) ctx.strokeRect(item.x, item.y, item.w, item.h);
+  if (laneLayer?.visible) {
+    ctx.strokeStyle = SCENE_RENDER_TOKENS.laneMarkings;
+    ctx.lineWidth = 2;
+    drawLaneLines(ctx, laneLayer.elements);
+  }
 
-  ctx.fillStyle = TOKENS.greenbelt;
-  for (const item of g.greenbelt) ctx.fillRect(item.x, item.y, item.w, item.h);
+  if (slotLayer?.visible) {
+    ctx.strokeStyle = SCENE_RENDER_TOKENS.parkingSlots;
+    drawRects(ctx, slotLayer.elements, PARKING_SLOTS, "stroke");
+  }
 
-  ctx.fillStyle = TOKENS.staticCars;
-  for (const item of g.staticCars) ctx.fillRect(item.x, item.y, item.w, item.h);
+  if (decoLayer?.visible) {
+    ctx.fillStyle = SCENE_RENDER_TOKENS.greenbelt;
+    drawRects(ctx, decoLayer.elements, GREENBELT_RECTS, "fill");
+  }
 
-  drawCar(ctx, state.ego);
+  if (staticLayer?.visible) {
+    ctx.fillStyle = SCENE_RENDER_TOKENS.staticCars;
+    drawRects(ctx, staticLayer.elements, STATIC_CARS, "fill");
+  }
+
+  if (egoLayer?.visible) {
+    drawEgoCar(ctx, state.ego);
+  }
 }
 
 function formatHud(state) {
   const visibleLayers =
-    state.renderedScene?.layers.filter((l) => l.visible).map((l) => l.layerId).join(" -> ") || "(none)";
+    state.renderedScene?.layers.filter((layer) => layer.visible).map((layer) => layer.layerId).join(" -> ") ||
+    "(none)";
+
   return [
     `phase        : ${state.phase}`,
     `scenario     : ${state.selectedScenario ?? "(none)"}`,
@@ -237,12 +144,15 @@ function formatHud(state) {
       state.lastControl ? `${state.lastControl.direction}, throttle=${state.lastControl.throttle}` : "(none)"
     }`,
     `ego(x,y,a)   : ${state.ego.x.toFixed(1)}, ${state.ego.y.toFixed(1)}, ${state.ego.angle.toFixed(2)}`,
+    `settleSpeed  : ${state.settleSpeed ?? "(none)"}`,
+    `maxSpeed     : ${state.maxAllowedSpeed ?? "(none)"}`,
+    `reason       : ${state.resultReason ?? "(none)"}`,
     `layers       : ${visibleLayers}`,
   ].join("\n");
 }
 
 function createPlayApp() {
-  const controller = new SessionController();
+  const page = createPlayPageModel();
 
   const els = {
     canvas: document.getElementById("sceneCanvas"),
@@ -250,8 +160,9 @@ function createPlayApp() {
     loadScene: document.getElementById("loadScene"),
     throttleRange: document.getElementById("throttleRange"),
     throttleValue: document.getElementById("throttleValue"),
-    successHint: document.getElementById("successHint"),
     finishBtn: document.getElementById("finishBtn"),
+    retryBtn: document.getElementById("retryBtn"),
+    backBtn: document.getElementById("backBtn"),
     resetCar: document.getElementById("resetCar"),
     hud: document.getElementById("hud"),
     resultText: document.getElementById("resultText"),
@@ -260,31 +171,34 @@ function createPlayApp() {
   const ctx = els.canvas.getContext("2d");
 
   function syncThrottle(value) {
-    const v = clamp(Number(value), -1, 1);
-    els.throttleRange.value = String(v);
-    els.throttleValue.value = String(v);
-    return v;
+    const normalized = clamp(Number(value), -1, 1);
+    els.throttleRange.value = String(normalized);
+    els.throttleValue.value = String(normalized);
+    return normalized;
   }
 
   function render() {
-    const state = controller.getViewState();
+    const state = page.getViewState();
     drawScene(ctx, state);
     els.hud.textContent = formatHud(state);
     els.resultText.textContent = state.resultText ?? "(未结束)";
   }
 
   function loadScenario() {
-    const scenario = els.scenario.value;
-    controller.selectScenario(scenario);
-    const spec = loadSceneRenderSpec(scenario);
-    if (spec) {
-      controller.setRenderedScene(renderScene(spec));
-    }
+    page.selectScenario(els.scenario.value);
     render();
   }
 
-  function applyControl(direction) {
-    controller.applyControl({
+  function applyKeyboardControl(direction) {
+    page.handleKeyboardControl({
+      direction,
+      throttle: syncThrottle(els.throttleValue.value),
+    });
+    render();
+  }
+
+  function applyButtonControl(direction) {
+    page.handleButtonControl({
       direction,
       throttle: syncThrottle(els.throttleValue.value),
     });
@@ -292,43 +206,55 @@ function createPlayApp() {
   }
 
   els.loadScene.addEventListener("click", loadScenario);
+
   els.resetCar.addEventListener("click", () => {
-    controller.resetEgo();
+    page.selectScenario(els.scenario.value);
     render();
   });
 
-  document.querySelectorAll("[data-direction]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      applyControl(btn.getAttribute("data-direction"));
+  els.retryBtn.addEventListener("click", () => {
+    page.clickRetry();
+    render();
+  });
+
+  els.backBtn.addEventListener("click", () => {
+    page.clickBackToScenarioSelect();
+    render();
+  });
+
+  document.querySelectorAll("[data-direction]").forEach((button) => {
+    button.addEventListener("click", () => {
+      applyButtonControl(button.getAttribute("data-direction"));
     });
   });
 
-  els.throttleRange.addEventListener("input", (e) => {
-    syncThrottle(e.target.value);
+  els.throttleRange.addEventListener("input", (event) => {
+    syncThrottle(event.target.value);
   });
-  els.throttleValue.addEventListener("input", (e) => {
-    syncThrottle(e.target.value);
+
+  els.throttleValue.addEventListener("input", (event) => {
+    syncThrottle(event.target.value);
   });
 
   els.finishBtn.addEventListener("click", () => {
-    controller.finishSession({ successHint: els.successHint.checked });
+    page.clickFinish();
     render();
   });
 
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") applyControl("left");
-    if (e.key === "ArrowRight") applyControl("right");
-    if (e.key === "ArrowUp") {
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") applyKeyboardControl("left");
+    if (event.key === "ArrowRight") applyKeyboardControl("right");
+    if (event.key === "ArrowUp") {
       syncThrottle(clamp(Number(els.throttleValue.value) + 0.1, -1, 1));
-      applyControl("straight");
+      applyKeyboardControl("straight");
     }
-    if (e.key === "ArrowDown") {
+    if (event.key === "ArrowDown") {
       syncThrottle(clamp(Number(els.throttleValue.value) - 0.1, -1, 1));
-      applyControl("straight");
+      applyKeyboardControl("straight");
     }
-    if (e.code === "Space") {
-      e.preventDefault();
-      controller.finishSession({ successHint: els.successHint.checked });
+    if (event.code === "Space") {
+      event.preventDefault();
+      page.clickFinish();
       render();
     }
   });

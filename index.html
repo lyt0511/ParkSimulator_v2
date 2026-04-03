@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ParkSimulator v2 - Slice s01</title>
+    <title>ParkSimulator v2 - Slice s03</title>
     <style>
       :root {
         --bg: #eef2f6;
@@ -132,9 +132,9 @@
   <body>
     <div class="page">
       <section class="card">
-        <h1>停车模拟器 Slice s01</h1>
+        <h1>停车模拟器 Slice s03</h1>
         <p class="sub">
-          可访问、可操控、可运行：选择场景后渲染基础语义图层，支持控制输入与结束占位结果。
+          接通会话状态机闭环：开始、结束、重试、返回场景选择，并展示真实结算与速度阈值边界结果。
         </p>
       </section>
 
@@ -165,17 +165,13 @@
           </div>
           <div class="row" style="margin-top: 10px">
             <label for="throttleRange">油门</label>
-            <input id="throttleRange" type="range" min="-1" max="1" step="0.1" value="0.5" />
-            <input id="throttleValue" type="number" min="-1" max="1" step="0.1" value="0.5" />
-          </div>
-          <div class="row" style="margin-top: 10px">
-            <label>
-              <input id="successHint" type="checkbox" />
-              结束时标记成功占位
-            </label>
+            <input id="throttleRange" type="range" min="-1" max="1" step="0.001" value="0.5" />
+            <input id="throttleValue" type="number" min="-1" max="1" step="0.001" value="0.5" />
           </div>
           <div class="row" style="margin-top: 10px">
             <button id="finishBtn" class="warn">结束会话</button>
+            <button id="retryBtn">重试</button>
+            <button id="backBtn">返回场景选择</button>
           </div>
 
           <div style="margin-top: 12px">

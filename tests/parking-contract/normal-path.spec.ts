@@ -1,8 +1,16 @@
-import test from "node:test";
+﻿import test from "node:test";
 import assert from "node:assert/strict";
 import { createPlayPageModel } from "../../src/play-page.ts";
 
-test("NP-s02: keyboard control moves ego car and exposes ego layer before finish", () => {
+function driveIntoSlot(page: ReturnType<typeof createPlayPageModel>, finalThrottle: number): void {
+  for (let i = 0; i < 29; i += 1) {
+    page.handleButtonControl({ direction: "straight", throttle: 0.5 });
+  }
+
+  page.handleButtonControl({ direction: "straight", throttle: finalThrottle });
+}
+
+test("NP-s03: settle success after finish, then retry and return to scenario select", () => {
   const page = createPlayPageModel();
 
   page.selectScenario("normal-reverse-parking");
@@ -10,35 +18,33 @@ test("NP-s02: keyboard control moves ego car and exposes ego layer before finish
 
   assert.equal(readyState.phase, "READY");
   assert.equal(readyState.renderReady, true);
-  assert.deepEqual(
-    readyState.renderedScene?.layers
-      .filter((layer) => layer.visible)
-      .map((layer) => layer.layerId),
-    ["background", "road", "laneMarkings", "parkingSlots", "decorations", "staticCars"],
-  );
-  assert.deepEqual(readyState.ego, { x: 360, y: 340, angle: -Math.PI / 2 });
 
-  page.handleKeyboardControl({ direction: "left", throttle: 0.5 });
+  driveIntoSlot(page, 0.05);
   const runningState = page.getViewState();
   assert.equal(runningState.phase, "RUNNING");
-  assert.equal(runningState.lastControl?.direction, "left");
-  assert.equal(runningState.lastControl?.throttle, 0.5);
-  assert.notDeepEqual(runningState.ego, readyState.ego);
 
-  const egoLayer = runningState.renderedScene?.layers.find((layer) => layer.layerId === "egoCar");
-  assert.equal(egoLayer?.visible, true);
-  assert.deepEqual(egoLayer?.elements.map((element) => element.split("@")[0]), [
-    "ego-body",
-    "ego-head",
-    "ego-wheel-front-left",
-    "ego-wheel-front-right",
-    "ego-wheel-rear-left",
-    "ego-wheel-rear-right",
-  ]);
+  page.clickFinish();
+  const doneState = page.getViewState();
 
-  page.clickFinish({ successHint: true });
-  const state = page.getViewState();
+  assert.equal(doneState.phase, "DONE");
+  assert.equal(doneState.resultReason, "PARKED");
+  assert.match(doneState.resultText ?? "", /^SUCCESS:/);
+  assert.equal(doneState.settleSpeed, 0.05);
 
-  assert.equal(state.phase, "DONE");
-  assert.equal(state.resultText, "SUCCESS_PLACEHOLDER");
+  const donePose = doneState.ego;
+  page.handleKeyboardControl({ direction: "left", throttle: 1 });
+  assert.deepEqual(page.getViewState().ego, donePose);
+
+  page.clickRetry();
+  const retryState = page.getViewState();
+  assert.equal(retryState.phase, "READY");
+  assert.equal(retryState.resultText, null);
+  assert.deepEqual(retryState.ego, { x: 360, y: 340, angle: -Math.PI / 2 });
+
+  page.clickBackToScenarioSelect();
+  const backState = page.getViewState();
+  assert.equal(backState.phase, "IDLE");
+  assert.equal(backState.selectedScenario, null);
+  assert.equal(backState.renderReady, false);
+  assert.equal(backState.renderedScene, null);
 });

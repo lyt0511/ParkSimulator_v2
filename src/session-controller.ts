@@ -1,9 +1,8 @@
-import {
+﻿import {
   DEFAULT_EGO_POSE,
   EGO_BOUNDS,
   EGO_SPEED_SCALE,
   EGO_STEER_STEP,
-  PLACEHOLDER_RESULT,
   SCENARIOS,
   type ControlInput,
   type EgoPose,
@@ -11,6 +10,10 @@ import {
   type SessionPhase,
 } from "./features/parking-contract/contract-constants.ts";
 import { normalizeControlInput } from "./features/parking-contract/input-guard.ts";
+import {
+  resolveSessionEnd,
+  type SessionEndResult,
+} from "./features/parking-contract/session-end-policy.ts";
 import type { RenderedScene } from "./scene-renderer.ts";
 
 export interface SessionViewState {
@@ -20,6 +23,9 @@ export interface SessionViewState {
   renderReady: boolean;
   lastControl: ControlInput | null;
   resultText: string | null;
+  resultReason: string | null;
+  settleSpeed: number | null;
+  maxAllowedSpeed: number | null;
   ego: EgoPose;
 }
 
@@ -43,19 +49,20 @@ export class SessionController {
   private renderedScene: RenderedScene | null = null;
   private renderReady = false;
   private lastControl: ControlInput | null = null;
-  private resultText: string | null = null;
+  private settlement: SessionEndResult | null = null;
   private ego: EgoPose = cloneEgoPose(DEFAULT_EGO_POSE);
 
   selectScenario(scenario: ScenarioId): void {
     if (!SCENARIOS.includes(scenario)) {
       return;
     }
+
     this.selectedScenario = scenario;
     this.phase = "READY";
     this.renderedScene = null;
     this.renderReady = false;
-    this.resultText = null;
     this.lastControl = null;
+    this.settlement = null;
     this.resetEgo();
   }
 
@@ -86,16 +93,43 @@ export class SessionController {
     this.advanceEgo(normalized);
   }
 
-  finishSession(options?: { successHint?: boolean }): void {
-    if (this.phase !== "RUNNING" && this.phase !== "READY") {
+  finishSession(): void {
+    if (this.phase !== "RUNNING" || !this.selectedScenario) {
       return;
     }
 
     this.phase = "SETTLING";
-    this.resultText = options?.successHint
-      ? PLACEHOLDER_RESULT.success
-      : PLACEHOLDER_RESULT.failure;
+    this.settlement = resolveSessionEnd({
+      scenarioId: this.selectedScenario,
+      ego: cloneEgoPose(this.ego),
+      lastControl: this.lastControl,
+    });
     this.phase = "DONE";
+  }
+
+  retrySession(): void {
+    if (!this.selectedScenario || this.phase !== "DONE") {
+      return;
+    }
+
+    this.phase = "READY";
+    this.lastControl = null;
+    this.settlement = null;
+    this.resetEgo();
+  }
+
+  backToScenarioSelect(): void {
+    if (this.phase !== "DONE" && this.phase !== "READY") {
+      return;
+    }
+
+    this.phase = "IDLE";
+    this.selectedScenario = null;
+    this.renderedScene = null;
+    this.renderReady = false;
+    this.lastControl = null;
+    this.settlement = null;
+    this.resetEgo();
   }
 
   getEgoPose(): EgoPose {
@@ -109,7 +143,10 @@ export class SessionController {
       renderedScene: this.renderedScene,
       renderReady: this.renderReady,
       lastControl: this.lastControl,
-      resultText: this.resultText,
+      resultText: this.settlement?.resultText ?? null,
+      resultReason: this.settlement?.reason ?? null,
+      settleSpeed: this.settlement?.speed ?? null,
+      maxAllowedSpeed: this.settlement?.maxAllowedSpeed ?? null,
       ego: cloneEgoPose(this.ego),
     };
   }

@@ -1,4 +1,4 @@
-import { isScenarioId } from "./features/parking-contract/contract-constants.ts";
+﻿import { isScenarioId } from "./features/parking-contract/contract-constants.ts";
 import { loadSceneRenderSpec } from "./scene-loader.ts";
 import { renderScene } from "./scene-renderer.ts";
 import { SessionController } from "./session-controller.ts";
@@ -7,7 +7,9 @@ export interface PlayPageModel {
   selectScenario: (scenario: string) => void;
   handleKeyboardControl: (input: { direction: string; throttle: number }) => void;
   handleButtonControl: (input: { direction: string; throttle: number }) => void;
-  clickFinish: (options?: { successHint?: boolean }) => void;
+  clickFinish: () => void;
+  clickRetry: () => void;
+  clickBackToScenarioSelect: () => void;
   getViewState: () => ReturnType<SessionController["getViewState"]>;
 }
 
@@ -24,7 +26,7 @@ export function createPlayPageModel(): PlayPageModel {
     controller.setRenderedScene(
       renderScene(loadedSceneSpec, {
         egoPose: controller.getEgoPose(),
-        showEgoCar: viewState.phase === "RUNNING",
+        showEgoCar: viewState.phase === "RUNNING" || viewState.phase === "SETTLING" || viewState.phase === "DONE",
       }),
     );
   };
@@ -50,7 +52,18 @@ export function createPlayPageModel(): PlayPageModel {
     },
     handleKeyboardControl: (input) => dispatchControl(input),
     handleButtonControl: (input) => dispatchControl(input),
-    clickFinish: (options) => controller.finishSession(options),
+    clickFinish: () => {
+      controller.finishSession();
+      syncRenderedScene();
+    },
+    clickRetry: () => {
+      controller.retrySession();
+      syncRenderedScene();
+    },
+    clickBackToScenarioSelect: () => {
+      controller.backToScenarioSelect();
+      loadedSceneSpec = null;
+    },
     getViewState: () => controller.getViewState(),
   };
 }

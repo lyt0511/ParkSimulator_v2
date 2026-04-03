@@ -1,4 +1,4 @@
-# Slice s01 Smoke Checklist
+﻿# Slice s03 Smoke Checklist
 
 ## Preconditions
 - Use scenario `normal-reverse-parking`.
@@ -7,17 +7,17 @@
 ## Checks
 1. Enter practice page and select `normal-reverse-parking`.
    - Expected: phase changes to `READY` and `renderReady=true`.
-2. Inspect visible semantic layers in canvas order.
-   - Expected: `background -> road -> laneMarkings -> parkingSlots -> decorations -> staticCars`.
-3. Trigger first valid control input.
-   - Expected: phase changes to `RUNNING` and the latest control is normalized.
-4. Re-select `normal-reverse-parking` while in session.
-   - Expected: scene refreshes without duplicated layer IDs.
-5. Click finish.
-   - Expected: phase reaches `DONE` and placeholder result text is visible.
-6. Select an invalid scenario ID.
-   - Expected: current valid scene remains unchanged.
+2. Trigger first valid control input.
+   - Expected: phase changes to `RUNNING` and ego car becomes visible.
+3. Drive into slot area and finish with speed `0.05`.
+   - Expected: phase reaches `DONE` and result shows success.
+4. Retry from done state.
+   - Expected: phase returns to `READY`, ego pose resets, result is cleared.
+5. Repeat finish with speed `0.051`.
+   - Expected: result shows failure with speed-threshold reason.
+6. Click back to scenario selection from `DONE` or `READY`.
+   - Expected: phase returns to `IDLE`, selected scenario is cleared.
 
-## Placeholder Result
-- Success text: `SUCCESS_PLACEHOLDER`
-- Failure text: `FAILURE_PLACEHOLDER`
+## Settlement Focus
+- Boundary threshold: `0.05` succeeds, `0.051` fails.
+- `DONE` state ignores control input until retry.
