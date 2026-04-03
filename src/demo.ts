@@ -26,19 +26,20 @@ const page = createPlayPageModel();
 printSnapshot("initial", page.getViewState());
 
 page.selectScenario("normal-reverse-parking");
-printSnapshot("after-select-ready", page.getViewState());
+printSnapshot("after-s01-scene-ready", page.getViewState());
 
 for (let i = 0; i < 29; i += 1) {
   page.handleKeyboardControl({ direction: "straight", throttle: 0.5 });
 }
 page.handleKeyboardControl({ direction: "straight", throttle: 0.05 });
-printSnapshot("after-driving", page.getViewState());
+printSnapshot("after-s02-control-running", page.getViewState());
 
 page.clickFinish();
-printSnapshot("after-finish-done", page.getViewState());
+printSnapshot("after-s03-finish-done", page.getViewState());
 
 page.clickRetry();
-printSnapshot("after-retry-ready", page.getViewState());
+printSnapshot("after-s03-retry-ready", page.getViewState());
 
 page.clickBackToScenarioSelect();
-printSnapshot("after-back-idle", page.getViewState());
+printSnapshot("after-s03-back-idle", page.getViewState());
+
