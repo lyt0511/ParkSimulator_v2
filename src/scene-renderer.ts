@@ -1,6 +1,8 @@
 import {
+  DEFAULT_EGO_POSE,
   SCENE_LAYER_ORDER,
   SCENE_RENDER_TOKENS,
+  type EgoPose,
   type SceneLayerId,
   type SceneRenderSpec,
   type ScenarioId,
@@ -18,7 +20,32 @@ export interface RenderedScene {
   layers: SceneLayerRenderOutput[];
 }
 
-function buildLayer(spec: SceneRenderSpec, layerId: SceneLayerId): SceneLayerRenderOutput {
+export interface RenderSceneOptions {
+  egoPose?: EgoPose;
+  showEgoCar?: boolean;
+}
+
+function toFixed(value: number): string {
+  return value.toFixed(2);
+}
+
+function buildEgoElements(egoPose: EgoPose): string[] {
+  const pose = `${toFixed(egoPose.x)},${toFixed(egoPose.y)},${toFixed(egoPose.angle)}`;
+  return [
+    `ego-body@${pose}`,
+    `ego-head@${pose}`,
+    `ego-wheel-front-left@${pose}`,
+    `ego-wheel-front-right@${pose}`,
+    `ego-wheel-rear-left@${pose}`,
+    `ego-wheel-rear-right@${pose}`,
+  ];
+}
+
+function buildLayer(
+  spec: SceneRenderSpec,
+  layerId: SceneLayerId,
+  options: RenderSceneOptions,
+): SceneLayerRenderOutput {
   switch (layerId) {
     case "background":
       return {
@@ -62,7 +89,16 @@ function buildLayer(spec: SceneRenderSpec, layerId: SceneLayerId): SceneLayerRen
         elements: [...spec.geometry.staticCars],
         visible: spec.geometry.staticCars.length > 0,
       };
-    case "egoCar":
+    case "egoCar": {
+      const egoPose = options.egoPose ?? DEFAULT_EGO_POSE;
+      const egoElements = buildEgoElements(egoPose);
+      return {
+        layerId,
+        color: SCENE_RENDER_TOKENS.egoBody,
+        elements: options.showEgoCar ? egoElements : [],
+        visible: options.showEgoCar === true,
+      };
+    }
     case "HUDOverlay":
       return {
         layerId,
@@ -73,10 +109,10 @@ function buildLayer(spec: SceneRenderSpec, layerId: SceneLayerId): SceneLayerRen
   }
 }
 
-export function renderScene(spec: SceneRenderSpec): RenderedScene {
+export function renderScene(spec: SceneRenderSpec, options: RenderSceneOptions = {}): RenderedScene {
   return {
     scenarioId: spec.scenarioId,
-    layers: SCENE_LAYER_ORDER.map((layerId) => buildLayer(spec, layerId)),
+    layers: SCENE_LAYER_ORDER.map((layerId) => buildLayer(spec, layerId, options)),
   };
 }
 

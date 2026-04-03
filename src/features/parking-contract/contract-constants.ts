@@ -7,9 +7,28 @@ export interface ControlInput {
   throttle: number;
 }
 
+export interface EgoPose {
+  x: number;
+  y: number;
+  angle: number;
+}
+
 export const TICK_HZ = 20;
 export const MIN_THROTTLE = -1;
 export const MAX_THROTTLE = 1;
+export const EGO_STEER_STEP = 0.08;
+export const EGO_SPEED_SCALE = 6;
+export const EGO_BOUNDS = {
+  minX: 100,
+  maxX: 620,
+  minY: 70,
+  maxY: 360,
+} as const;
+export const DEFAULT_EGO_POSE: EgoPose = {
+  x: 360,
+  y: 340,
+  angle: -Math.PI / 2,
+};
 
 export const SCENARIOS = ["normal-reverse-parking"] as const;
 export type ScenarioId = (typeof SCENARIOS)[number];
@@ -46,6 +65,9 @@ export interface SceneRenderTokens {
   parkingSlots: string;
   greenbelt: string;
   staticCars: string;
+  egoBody: string;
+  egoHead: string;
+  egoWheel: string;
 }
 
 export const SCENE_RENDER_TOKENS: SceneRenderTokens = {
@@ -55,6 +77,9 @@ export const SCENE_RENDER_TOKENS: SceneRenderTokens = {
   parkingSlots: "#d9d9d9",
   greenbelt: "#2f8f46",
   staticCars: "#8ea0ad",
+  egoBody: "#c53030",
+  egoHead: "#742a2a",
+  egoWheel: "#1a202c",
 };
 
 export interface SceneGeometrySpec {

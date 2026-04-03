@@ -1,7 +1,12 @@
 import {
+  DEFAULT_EGO_POSE,
+  EGO_BOUNDS,
+  EGO_SPEED_SCALE,
+  EGO_STEER_STEP,
   PLACEHOLDER_RESULT,
   SCENARIOS,
   type ControlInput,
+  type EgoPose,
   type ScenarioId,
   type SessionPhase,
 } from "./features/parking-contract/contract-constants.ts";
@@ -15,6 +20,21 @@ export interface SessionViewState {
   renderReady: boolean;
   lastControl: ControlInput | null;
   resultText: string | null;
+  ego: EgoPose;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (value > max) return max;
+  if (value < min) return min;
+  return value;
+}
+
+function cloneEgoPose(ego: EgoPose): EgoPose {
+  return {
+    x: ego.x,
+    y: ego.y,
+    angle: ego.angle,
+  };
 }
 
 export class SessionController {
@@ -24,6 +44,7 @@ export class SessionController {
   private renderReady = false;
   private lastControl: ControlInput | null = null;
   private resultText: string | null = null;
+  private ego: EgoPose = cloneEgoPose(DEFAULT_EGO_POSE);
 
   selectScenario(scenario: ScenarioId): void {
     if (!SCENARIOS.includes(scenario)) {
@@ -35,6 +56,7 @@ export class SessionController {
     this.renderReady = false;
     this.resultText = null;
     this.lastControl = null;
+    this.resetEgo();
   }
 
   setRenderedScene(renderedScene: RenderedScene): void {
@@ -61,6 +83,7 @@ export class SessionController {
     }
 
     this.lastControl = normalized;
+    this.advanceEgo(normalized);
   }
 
   finishSession(options?: { successHint?: boolean }): void {
@@ -75,6 +98,10 @@ export class SessionController {
     this.phase = "DONE";
   }
 
+  getEgoPose(): EgoPose {
+    return cloneEgoPose(this.ego);
+  }
+
   getViewState(): SessionViewState {
     return {
       phase: this.phase,
@@ -83,6 +110,27 @@ export class SessionController {
       renderReady: this.renderReady,
       lastControl: this.lastControl,
       resultText: this.resultText,
+      ego: cloneEgoPose(this.ego),
     };
+  }
+
+  private resetEgo(): void {
+    this.ego = cloneEgoPose(DEFAULT_EGO_POSE);
+  }
+
+  private advanceEgo(control: ControlInput): void {
+    const steerDelta =
+      control.direction === "left"
+        ? -EGO_STEER_STEP
+        : control.direction === "right"
+          ? EGO_STEER_STEP
+          : 0;
+    this.ego.angle += steerDelta;
+
+    const speed = control.throttle * EGO_SPEED_SCALE;
+    this.ego.x += Math.cos(this.ego.angle) * speed;
+    this.ego.y += Math.sin(this.ego.angle) * speed;
+    this.ego.x = clamp(this.ego.x, EGO_BOUNDS.minX, EGO_BOUNDS.maxX);
+    this.ego.y = clamp(this.ego.y, EGO_BOUNDS.minY, EGO_BOUNDS.maxY);
   }
 }

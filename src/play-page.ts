@@ -13,6 +13,26 @@ export interface PlayPageModel {
 
 export function createPlayPageModel(): PlayPageModel {
   const controller = new SessionController();
+  let loadedSceneSpec: ReturnType<typeof loadSceneRenderSpec> = null;
+
+  const syncRenderedScene = (): void => {
+    if (!loadedSceneSpec) {
+      return;
+    }
+
+    const viewState = controller.getViewState();
+    controller.setRenderedScene(
+      renderScene(loadedSceneSpec, {
+        egoPose: controller.getEgoPose(),
+        showEgoCar: viewState.phase === "RUNNING",
+      }),
+    );
+  };
+
+  const dispatchControl = (input: { direction: string; throttle: number }): void => {
+    controller.applyControl(input);
+    syncRenderedScene();
+  };
 
   return {
     selectScenario: (scenario) => {
@@ -21,15 +41,15 @@ export function createPlayPageModel(): PlayPageModel {
       }
 
       controller.selectScenario(scenario);
-      const sceneSpec = loadSceneRenderSpec(scenario);
-      if (!sceneSpec) {
+      loadedSceneSpec = loadSceneRenderSpec(scenario);
+      if (!loadedSceneSpec) {
         return;
       }
 
-      controller.setRenderedScene(renderScene(sceneSpec));
+      syncRenderedScene();
     },
-    handleKeyboardControl: (input) => controller.applyControl(input),
-    handleButtonControl: (input) => controller.applyControl(input),
+    handleKeyboardControl: (input) => dispatchControl(input),
+    handleButtonControl: (input) => dispatchControl(input),
     clickFinish: (options) => controller.finishSession(options),
     getViewState: () => controller.getViewState(),
   };
