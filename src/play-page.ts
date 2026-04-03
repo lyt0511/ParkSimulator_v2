@@ -1,8 +1,10 @@
-import { SessionController } from "./session-controller";
-import type { ScenarioId } from "./features/parking-contract/contract-constants";
+import { isScenarioId } from "./features/parking-contract/contract-constants.ts";
+import { loadSceneRenderSpec } from "./scene-loader.ts";
+import { renderScene } from "./scene-renderer.ts";
+import { SessionController } from "./session-controller.ts";
 
 export interface PlayPageModel {
-  selectScenario: (scenario: ScenarioId) => void;
+  selectScenario: (scenario: string) => void;
   handleKeyboardControl: (input: { direction: string; throttle: number }) => void;
   handleButtonControl: (input: { direction: string; throttle: number }) => void;
   clickFinish: (options?: { successHint?: boolean }) => void;
@@ -13,7 +15,19 @@ export function createPlayPageModel(): PlayPageModel {
   const controller = new SessionController();
 
   return {
-    selectScenario: (scenario) => controller.selectScenario(scenario),
+    selectScenario: (scenario) => {
+      if (!isScenarioId(scenario)) {
+        return;
+      }
+
+      controller.selectScenario(scenario);
+      const sceneSpec = loadSceneRenderSpec(scenario);
+      if (!sceneSpec) {
+        return;
+      }
+
+      controller.setRenderedScene(renderScene(sceneSpec));
+    },
     handleKeyboardControl: (input) => controller.applyControl(input),
     handleButtonControl: (input) => controller.applyControl(input),
     clickFinish: (options) => controller.finishSession(options),

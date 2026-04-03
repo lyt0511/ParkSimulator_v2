@@ -3,7 +3,7 @@ import {
   MIN_THROTTLE,
   type ControlInput,
   type DirectionInput,
-} from "./contract-constants";
+} from "./contract-constants.ts";
 
 const DIRECTION_SET = new Set<DirectionInput>(["left", "right", "straight"]);
 

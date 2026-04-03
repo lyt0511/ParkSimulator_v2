@@ -1,0 +1,14 @@
+{
+  "name": "park-simulator-v2",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Parking simulator contract playground",
+  "scripts": {
+    "serve": "python -m http.server 5173",
+    "run": "node --experimental-strip-types src/demo.ts",
+    "test": "node scripts/run-tests.mjs",
+    "build": "node scripts/build-check.mjs",
+    "lint": "npm run build"
+  }
+}
