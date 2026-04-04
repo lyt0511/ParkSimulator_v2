@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ParkSimulator v2 - Slice s01+s02+s03</title>
+    <title>ParkSimulator v2 - Slice s01+s02+s03+s04+s05</title>
     <style>
       :root {
         --bg: #eef2f6;
@@ -132,9 +132,9 @@
   <body>
     <div class="page">
       <section class="card">
-        <h1>停车模拟器 Slice s01+s02+s03</h1>
+        <h1>停车模拟器 Slice s01+s02+s03+s04+s05</h1>
         <p class="sub">
-          合并切片01+02+03：可加载基础场景语义、可通过输入驱动车辆、可完成结束/重试/返回并看到真实结算。
+          合并切片01~05：支持四场景循环练习，具备可区分渲染、可控驾驶、真实结算，以及风险锁存与超时自动结束。
         </p>
       </section>
 
@@ -144,13 +144,16 @@
             <label for="scenario">场景</label>
             <select id="scenario">
               <option value="normal-reverse-parking">normal-reverse-parking</option>
+              <option value="normal-parallel-parking">normal-parallel-parking</option>
+              <option value="narrow-reverse-parking">narrow-reverse-parking</option>
+              <option value="narrow-parallel-parking">narrow-parallel-parking</option>
             </select>
             <button id="loadScene" class="primary">选择并加载场景</button>
             <button id="resetCar">重置车辆位置</button>
           </div>
           <canvas id="sceneCanvas" width="720" height="420"></canvas>
           <small class="sub">
-            键盘：←/→ 控方向，↑/↓ 控油门，Space 结束；或使用右侧按钮操控。
+            键盘：←/→ 控方向，↑/↓ 控油门，Space 结束；HUD 中可查看 `latchedRisks`（风险锁存）与 `elapsedTicks`（超时计数）。
           </small>
         </div>
 

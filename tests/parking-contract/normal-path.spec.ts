@@ -1,5 +1,6 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
+import { SCENARIOS, type ScenarioId } from "../../src/features/parking-contract/contract-constants.ts";
 import { createPlayPageModel } from "../../src/play-page.ts";
 
 function driveIntoSlot(page: ReturnType<typeof createPlayPageModel>, finalThrottle: number): void {
@@ -10,12 +11,9 @@ function driveIntoSlot(page: ReturnType<typeof createPlayPageModel>, finalThrott
   page.handleButtonControl({ direction: "straight", throttle: finalThrottle });
 }
 
-test("NP-s03: settle success after finish, then retry and return to scenario select", () => {
-  const page = createPlayPageModel();
-
-  page.selectScenario("normal-reverse-parking");
+function runSuccessfulSession(page: ReturnType<typeof createPlayPageModel>, scenarioId: ScenarioId): void {
+  page.selectScenario(scenarioId);
   const readyState = page.getViewState();
-
   assert.equal(readyState.phase, "READY");
   assert.equal(readyState.renderReady, true);
 
@@ -23,6 +21,26 @@ test("NP-s03: settle success after finish, then retry and return to scenario sel
   const runningState = page.getViewState();
   assert.equal(runningState.phase, "RUNNING");
 
+  page.clickFinish();
+  const doneState = page.getViewState();
+  assert.equal(doneState.phase, "DONE");
+  assert.equal(doneState.resultReason, "PARKED");
+  assert.match(doneState.resultText ?? "", /^SUCCESS:/);
+}
+
+test("NP-s05: four scenarios can all finish a successful session", () => {
+  const page = createPlayPageModel();
+  for (const scenarioId of SCENARIOS) {
+    runSuccessfulSession(page, scenarioId);
+    page.clickRetry();
+  }
+});
+
+test("NP-s03: settle success after finish, then retry and return to scenario select", () => {
+  const page = createPlayPageModel();
+
+  page.selectScenario("normal-reverse-parking");
+  driveIntoSlot(page, 0.05);
   page.clickFinish();
   const doneState = page.getViewState();
 

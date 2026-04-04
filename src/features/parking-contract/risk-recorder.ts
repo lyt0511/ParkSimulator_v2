@@ -12,6 +12,18 @@ const STATIC_CAR_BOXES: Record<ScenarioId, Array<{ minX: number; maxX: number; m
     { minX: 150, maxX: 230, minY: 228, maxY: 262 },
     { minX: 450, maxX: 530, minY: 228, maxY: 262 },
   ],
+  "normal-parallel-parking": [
+    { minX: 250, maxX: 330, minY: 168, maxY: 202 },
+    { minX: 250, maxX: 330, minY: 278, maxY: 312 },
+  ],
+  "narrow-reverse-parking": [
+    { minX: 260, maxX: 330, minY: 232, maxY: 264 },
+    { minX: 400, maxX: 470, minY: 232, maxY: 264 },
+  ],
+  "narrow-parallel-parking": [
+    { minX: 470, maxX: 540, minY: 170, maxY: 204 },
+    { minX: 470, maxX: 540, minY: 280, maxY: 314 },
+  ],
 };
 
 function insideBox(ego: EgoPose, box: { minX: number; maxX: number; minY: number; maxY: number }): boolean {

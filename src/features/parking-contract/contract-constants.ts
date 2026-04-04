@@ -33,7 +33,12 @@ export const DEFAULT_EGO_POSE: EgoPose = {
   angle: -Math.PI / 2,
 };
 
-export const SCENARIOS = ["normal-reverse-parking"] as const;
+export const SCENARIOS = [
+  "normal-reverse-parking",
+  "normal-parallel-parking",
+  "narrow-reverse-parking",
+  "narrow-parallel-parking",
+] as const;
 export type ScenarioId = (typeof SCENARIOS)[number];
 
 export function isScenarioId(value: string): value is ScenarioId {

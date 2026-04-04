@@ -3,27 +3,58 @@ import { SCENE_RENDER_TOKENS } from "./.demo-gen/features/parking-contract/contr
 
 const ROAD_RECTS = {
   "main-road-rect": { x: 80, y: 50, w: 560, h: 320 },
+  "parallel-main-road": { x: 140, y: 80, w: 440, h: 260 },
+  "parallel-side-lane": { x: 230, y: 120, w: 180, h: 180 },
+  "narrow-reverse-road": { x: 140, y: 60, w: 440, h: 300 },
+  "narrow-parallel-road": { x: 120, y: 90, w: 500, h: 240 },
+  "narrow-parallel-bay": { x: 420, y: 120, w: 120, h: 180 },
 };
 
 const LANE_LINES = {
   "lane-edge-left": { x1: 100, y1: 100, x2: 620, y2: 100, dashed: false },
   "lane-edge-right": { x1: 100, y1: 300, x2: 620, y2: 300, dashed: false },
   "lane-center-dash": { x1: 360, y1: 80, x2: 360, y2: 340, dashed: true },
+  "parallel-lane-edge-top": { x1: 160, y1: 130, x2: 560, y2: 130, dashed: false },
+  "parallel-lane-edge-bottom": { x1: 160, y1: 270, x2: 560, y2: 270, dashed: false },
+  "parallel-lane-mid-dash": { x1: 360, y1: 130, x2: 360, y2: 270, dashed: true },
+  "narrow-lane-left": { x1: 180, y1: 100, x2: 540, y2: 100, dashed: false },
+  "narrow-lane-right": { x1: 180, y1: 280, x2: 540, y2: 280, dashed: false },
+  "narrow-lane-center-dash": { x1: 360, y1: 100, x2: 360, y2: 300, dashed: true },
+  "narrow-parallel-edge-top": { x1: 150, y1: 150, x2: 590, y2: 150, dashed: false },
+  "narrow-parallel-edge-bottom": { x1: 150, y1: 250, x2: 590, y2: 250, dashed: false },
+  "narrow-parallel-mid-dash": { x1: 360, y1: 150, x2: 360, y2: 250, dashed: true },
 };
 
 const PARKING_SLOTS = {
   "slot-a-outline": { x: 130, y: 210, w: 120, h: 80 },
   "slot-b-outline": { x: 280, y: 210, w: 120, h: 80 },
   "slot-c-outline": { x: 430, y: 210, w: 120, h: 80 },
+  "parallel-slot-a": { x: 250, y: 140, w: 80, h: 50 },
+  "parallel-slot-b": { x: 250, y: 200, w: 80, h: 50 },
+  "parallel-slot-c": { x: 250, y: 260, w: 80, h: 50 },
+  "narrow-reverse-slot-a": { x: 270, y: 215, w: 90, h: 65 },
+  "narrow-reverse-slot-b": { x: 370, y: 215, w: 90, h: 65 },
+  "narrow-parallel-slot-a": { x: 440, y: 160, w: 70, h: 45 },
+  "narrow-parallel-slot-b": { x: 440, y: 265, w: 70, h: 45 },
 };
 
 const GREENBELT_RECTS = {
   "greenbelt-top-strip": { x: 80, y: 18, w: 560, h: 24 },
+  "parallel-greenbelt-left": { x: 60, y: 80, w: 70, h: 260 },
+  "narrow-greenbelt-top": { x: 140, y: 25, w: 440, h: 24 },
+  "narrow-greenbelt-bottom": { x: 140, y: 368, w: 440, h: 24 },
+  "narrow-parallel-greenbelt-right": { x: 620, y: 90, w: 60, h: 240 },
 };
 
 const STATIC_CARS = {
   "ref-car-left": { x: 150, y: 228, w: 80, h: 34 },
   "ref-car-right": { x: 450, y: 228, w: 80, h: 34 },
+  "parallel-ref-car-top": { x: 250, y: 168, w: 80, h: 34 },
+  "parallel-ref-car-bottom": { x: 250, y: 278, w: 80, h: 34 },
+  "narrow-reverse-ref-left": { x: 260, y: 232, w: 70, h: 32 },
+  "narrow-reverse-ref-right": { x: 400, y: 232, w: 70, h: 32 },
+  "narrow-parallel-ref-top": { x: 470, y: 170, w: 70, h: 34 },
+  "narrow-parallel-ref-bottom": { x: 470, y: 280, w: 70, h: 34 },
 };
 
 function clamp(value, min, max) {

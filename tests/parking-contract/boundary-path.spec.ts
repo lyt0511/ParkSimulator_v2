@@ -1,5 +1,6 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
+import { SCENARIOS } from "../../src/features/parking-contract/contract-constants.ts";
 import { createPlayPageModel } from "../../src/play-page.ts";
 
 function driveIntoSlot(page: ReturnType<typeof createPlayPageModel>, finalThrottle: number): void {
@@ -62,6 +63,24 @@ test("BP-s02: selecting the same scenario twice keeps a single ordered layer sta
     "egoCar",
     "HUDOverlay",
   ]);
+});
+
+test("BP-s05: each scenario has a distinguishable render geometry signature", () => {
+  const page = createPlayPageModel();
+  const signatures = new Set<string>();
+
+  for (const scenarioId of SCENARIOS) {
+    page.selectScenario(scenarioId);
+    const rendered = page.getViewState().renderedScene;
+    assert.ok(rendered);
+
+    const signature = rendered.layers
+      .map((layer) => `${layer.layerId}:${layer.elements.join(",")}`)
+      .join("|");
+    signatures.add(signature);
+  }
+
+  assert.equal(signatures.size, SCENARIOS.length);
 });
 
 test("BP-s04: out-of-range throttle is clamped without breaking session", () => {

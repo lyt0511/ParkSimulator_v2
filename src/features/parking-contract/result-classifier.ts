@@ -38,6 +38,24 @@ const SLOT_ZONE_BY_SCENARIO: Record<ScenarioId, { minX: number; maxX: number; mi
     minY: 210,
     maxY: 290,
   },
+  "normal-parallel-parking": {
+    minX: 300,
+    maxX: 420,
+    minY: 230,
+    maxY: 300,
+  },
+  "narrow-reverse-parking": {
+    minX: 320,
+    maxX: 390,
+    minY: 220,
+    maxY: 285,
+  },
+  "narrow-parallel-parking": {
+    minX: 300,
+    maxX: 390,
+    minY: 215,
+    maxY: 275,
+  },
 };
 
 function normalizeAngle(angle: number): number {
