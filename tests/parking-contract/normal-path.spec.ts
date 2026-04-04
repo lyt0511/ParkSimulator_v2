@@ -39,6 +39,8 @@ test("NP-s03: settle success after finish, then retry and return to scenario sel
   const retryState = page.getViewState();
   assert.equal(retryState.phase, "READY");
   assert.equal(retryState.resultText, null);
+  assert.deepEqual(retryState.latchedRisks, []);
+  assert.equal(retryState.elapsedTicks, 0);
   assert.deepEqual(retryState.ego, { x: 360, y: 340, angle: -Math.PI / 2 });
 
   page.clickBackToScenarioSelect();

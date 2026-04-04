@@ -140,9 +140,11 @@ function formatHud(state) {
     `phase        : ${state.phase}`,
     `scenario     : ${state.selectedScenario ?? "(none)"}`,
     `renderReady  : ${state.renderReady}`,
+    `elapsedTicks : ${state.elapsedTicks}`,
     `lastControl  : ${
       state.lastControl ? `${state.lastControl.direction}, throttle=${state.lastControl.throttle}` : "(none)"
     }`,
+    `latchedRisks : ${state.latchedRisks.length > 0 ? state.latchedRisks.join(",") : "(none)"}`,
     `ego(x,y,a)   : ${state.ego.x.toFixed(1)}, ${state.ego.y.toFixed(1)}, ${state.ego.angle.toFixed(2)}`,
     `settleSpeed  : ${state.settleSpeed ?? "(none)"}`,
     `maxSpeed     : ${state.maxAllowedSpeed ?? "(none)"}`,

@@ -6,6 +6,7 @@
   SCENARIOS,
   type ControlInput,
   type EgoPose,
+  type RuntimeRisk,
   type ScenarioId,
   type SessionPhase,
 } from "./features/parking-contract/contract-constants.ts";
@@ -14,6 +15,10 @@ import {
   resolveSessionEnd,
   type SessionEndResult,
 } from "./features/parking-contract/session-end-policy.ts";
+import {
+  detectRuntimeRisks,
+  latchRisks,
+} from "./features/parking-contract/risk-recorder.ts";
 import type { RenderedScene } from "./scene-renderer.ts";
 
 export interface SessionViewState {
@@ -26,6 +31,8 @@ export interface SessionViewState {
   resultReason: string | null;
   settleSpeed: number | null;
   maxAllowedSpeed: number | null;
+  elapsedTicks: number;
+  latchedRisks: RuntimeRisk[];
   ego: EgoPose;
 }
 
@@ -50,6 +57,8 @@ export class SessionController {
   private renderReady = false;
   private lastControl: ControlInput | null = null;
   private settlement: SessionEndResult | null = null;
+  private elapsedTicks = 0;
+  private latchedRisks: RuntimeRisk[] = [];
   private ego: EgoPose = cloneEgoPose(DEFAULT_EGO_POSE);
 
   selectScenario(scenario: ScenarioId): void {
@@ -63,6 +72,8 @@ export class SessionController {
     this.renderReady = false;
     this.lastControl = null;
     this.settlement = null;
+    this.elapsedTicks = 0;
+    this.latchedRisks = [];
     this.resetEgo();
   }
 
@@ -91,6 +102,12 @@ export class SessionController {
 
     this.lastControl = normalized;
     this.advanceEgo(normalized);
+    this.elapsedTicks += 1;
+    this.evaluateRuntimeRisks();
+
+    if (this.phase === "RUNNING" && this.latchedRisks.includes("TIMEOUT")) {
+      this.settleSession(true);
+    }
   }
 
   finishSession(): void {
@@ -98,13 +115,7 @@ export class SessionController {
       return;
     }
 
-    this.phase = "SETTLING";
-    this.settlement = resolveSessionEnd({
-      scenarioId: this.selectedScenario,
-      ego: cloneEgoPose(this.ego),
-      lastControl: this.lastControl,
-    });
-    this.phase = "DONE";
+    this.settleSession(false);
   }
 
   retrySession(): void {
@@ -115,6 +126,8 @@ export class SessionController {
     this.phase = "READY";
     this.lastControl = null;
     this.settlement = null;
+    this.elapsedTicks = 0;
+    this.latchedRisks = [];
     this.resetEgo();
   }
 
@@ -129,6 +142,8 @@ export class SessionController {
     this.renderReady = false;
     this.lastControl = null;
     this.settlement = null;
+    this.elapsedTicks = 0;
+    this.latchedRisks = [];
     this.resetEgo();
   }
 
@@ -147,8 +162,40 @@ export class SessionController {
       resultReason: this.settlement?.reason ?? null,
       settleSpeed: this.settlement?.speed ?? null,
       maxAllowedSpeed: this.settlement?.maxAllowedSpeed ?? null,
+      elapsedTicks: this.elapsedTicks,
+      latchedRisks: [...this.latchedRisks],
       ego: cloneEgoPose(this.ego),
     };
+  }
+
+  private evaluateRuntimeRisks(): void {
+    if (this.phase !== "RUNNING" || !this.selectedScenario) {
+      return;
+    }
+
+    const detected = detectRuntimeRisks({
+      scenarioId: this.selectedScenario,
+      ego: this.ego,
+      elapsedTicks: this.elapsedTicks,
+    });
+
+    this.latchedRisks = latchRisks(this.latchedRisks, detected);
+  }
+
+  private settleSession(timeoutTriggered: boolean): void {
+    if (!this.selectedScenario) {
+      return;
+    }
+
+    this.phase = "SETTLING";
+    this.settlement = resolveSessionEnd({
+      scenarioId: this.selectedScenario,
+      ego: cloneEgoPose(this.ego),
+      lastControl: this.lastControl,
+      latchedRisks: this.latchedRisks,
+      timeoutTriggered,
+    });
+    this.phase = "DONE";
   }
 
   private resetEgo(): void {

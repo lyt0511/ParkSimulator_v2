@@ -63,3 +63,18 @@ test("BP-s02: selecting the same scenario twice keeps a single ordered layer sta
     "HUDOverlay",
   ]);
 });
+
+test("BP-s04: out-of-range throttle is clamped without breaking session", () => {
+  const page = createPlayPageModel();
+  page.selectScenario("normal-reverse-parking");
+
+  page.handleKeyboardControl({ direction: "straight", throttle: 1.4 });
+  const high = page.getViewState();
+  assert.equal(high.phase, "RUNNING");
+  assert.equal(high.lastControl?.throttle, 1);
+
+  page.handleKeyboardControl({ direction: "straight", throttle: -1.2 });
+  const low = page.getViewState();
+  assert.equal(low.phase, "RUNNING");
+  assert.equal(low.lastControl?.throttle, -1);
+});

@@ -7,6 +7,8 @@ export interface ControlInput {
   throttle: number;
 }
 
+export type RuntimeRisk = "COLLISION" | "LANE_VIOLATION" | "TIMEOUT";
+
 export interface EgoPose {
   x: number;
   y: number;
@@ -18,6 +20,7 @@ export const MIN_THROTTLE = -1;
 export const MAX_THROTTLE = 1;
 export const EGO_STEER_STEP = 0.08;
 export const EGO_SPEED_SCALE = 6;
+export const SESSION_TIMEOUT_TICKS = 120;
 export const EGO_BOUNDS = {
   minX: 100,
   maxX: 620,

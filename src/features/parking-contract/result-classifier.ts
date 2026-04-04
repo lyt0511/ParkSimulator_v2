@@ -4,7 +4,14 @@
   ScenarioId,
 } from "./contract-constants.ts";
 
-export type SettlementReason = "PARKED" | "NOT_IN_SLOT" | "BAD_HEADING" | "SPEED_TOO_HIGH";
+export type SettlementReason =
+  | "PARKED"
+  | "NOT_IN_SLOT"
+  | "BAD_HEADING"
+  | "SPEED_TOO_HIGH"
+  | "COLLISION"
+  | "LANE_VIOLATION"
+  | "TIMEOUT";
 
 export interface SessionClassificationInput {
   scenarioId: ScenarioId;

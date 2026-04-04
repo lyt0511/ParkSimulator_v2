@@ -25,8 +25,10 @@ export function normalizeControlInput(input: {
     return null;
   }
 
+  const safeThrottle = Number.isFinite(input.throttle) ? input.throttle : 0;
+
   return {
     direction: input.direction,
-    throttle: clampThrottle(input.throttle),
+    throttle: clampThrottle(safeThrottle),
   };
 }
